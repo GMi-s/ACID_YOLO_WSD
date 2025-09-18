@@ -1,0 +1,16 @@
+# Ignore files
+instance.sh
+terraform.tfstate.backup
+
+# Ignore folders
+.DS_Store
+.terraform
+.terraform.lock.hcl
+
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
+*.tfstate.backup.*
+*.tfplan
+.terraform
+*.info

@@ -1,0 +1,60 @@
+import os
+import shutil
+import random
+from typing import Dict
+def data_download(data_links: Dict[str, str]):
+    """
+    Загрузка данных по ссылкам.
+    """
+    for key, link in data_links.items():
+        file_path = f"/app/data/{key}.zip"
+        target_folder = f"/app/data/{key}"
+        new_download_link = f'https://getfile.dokpub.com/yandex/get/{link}'
+        # Удаление существующих файлов
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        if os.path.exists(target_folder):
+            shutil.rmtree(target_folder)
+        # Загрузка и распаковка данных
+        os.system(f"wget {new_download_link} -O {file_path}")
+        os.system(f"unzip {file_path} -d /app/data/")
+        os.remove(file_path)
+def process_data_folders(data_links: Dict[str, str], train_percent: int, valid_percent: int):
+    """
+    Обработка данных: разделение на обучающую, валидационную и тестовую выборки.
+    """
+    dest_train_folder = '/app/data/obj_train_data'
+    dest_valid_folder = '/app/data/obj_valid_data'
+    dest_test_folder = '/app/data/obj_test_data'
+    # Удаление и создание папок
+    for folder in [dest_train_folder, dest_valid_folder, dest_test_folder]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+        os.makedirs(folder)
+    # Распределение данных
+    for key in data_links:
+        src_folder = f'/app/data/{key}'
+        src_train_folder = os.path.join(src_folder, 'obj_train_data')
+        for f in os.listdir(src_train_folder):
+            file_path = os.path.join(src_train_folder, f)
+            if os.path.isfile(file_path):
+                rand_num = random.randint(1, 100)
+                if rand_num <= train_percent:
+                    shutil.copy(file_path, dest_train_folder)
+                elif rand_num <= train_percent + valid_percent:
+                    shutil.copy(file_path, dest_valid_folder)
+                else:
+                    shutil.copy(file_path, dest_test_folder)
+def create_yaml_file():
+    """
+    Создание YAML файла для обучения YOLOv8.
+    """
+    data = """
+    path: /app/data
+    train: /app/data/images/train
+    val: /app/data/images/valid
+    names:
+        0: 'WS'
+    """
+    with open("/app/data/weld_spot.yaml", "w") as file:
+        file.write(data)

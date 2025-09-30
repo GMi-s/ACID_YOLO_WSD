@@ -2,31 +2,25 @@
 Main pipeline for the project
 """
 
-#import os
-#import shutil
-#from typing import Dict
-from preprocessing import data_download, read_items_list
+from preprocessing import data_download  # Импорт функции загрузки данных
+from sample_img_show import img_show     # Импорт функции отображения изображений
 
-def run_pipeline():
+def main():
     """
-    Основной пайплайн для обработки данных и подготовки к обучению.
+    Основная функция для последовательного выполнения задач:
+    1. Загрузка данных с помощью preprocessing.py.
+    2. Отображение случайных изображений с bounding boxes с помощью sample_img_show.py.
     """
     # Шаг 1: Загрузка данных
-    print("Запуск pipeline...")
-    data_download()
-    
+    print("Загрузка данных...")
+    data_download()  # Вызов функции загрузки данных
+    print("Загрузка данных завершена.")
 
-    # Шаг 2: Чтение данных из файлов
-    data_name = 'train.txt'  # Имя файла для чтения
-    data_storage = read_items_list(data_name)  # Создание списка data_storage
+    # Шаг 2: Отображение случайных изображений
+    print("Отображение случайных изображений с bounding boxes...")
+    img_show()  # Вызов функции отображения изображений
+    print("Отображение завершено.")
 
-    # Шаг 3: Вывод результатов (для проверки)
-    print("Список успешно создан:")
-    for key, value in data_storage.items():
-        print(f"{key}: {value}")
-
-    print("Pipeline завершен.")
-
-# Основная программа
+# Вызов основной функции при запуске скрипта
 if __name__ == "__main__":
-    run_pipeline()
+    main()

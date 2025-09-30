@@ -1,17 +1,9 @@
-#DataSet:
-stored_data = {
-               'Weld_Spot-Large_Scale':'https://disk.yandex.ru/d/pSGMq59oD9--2w',
-               'Weld_Spot-No_Spots':'https://disk.yandex.ru/d/wWZxC-eFLeMtPQ',
-               'Weld_Spot-Small_Scale':'https://disk.yandex.ru/d/CX0NKNqOKKUGOA'
-               }
-
-
 import os
 import shutil
 import requests
 import zipfile
 import time
-import numpy as np
+from config import stored_data  # Импорт переменной stored_data из config.py
 
 # Функция для скачивания и распаковки файла
 def data_set_download(link, file_name):
@@ -89,41 +81,7 @@ def data_download():
         data_set_download(stored_data[key], key)
     # Удаление архивов из текущего рабочего каталога
     delete_downloaded_archives(os.getcwd())
-
-# Функция для чтения *.txt data:
-def reading_data(folder, content):
-    """
-    Чтение данных из текстового файла.
-    Args:
-        folder (str): Название папки внутри `sample_data`.
-        content (str): Название файла (например, "file.txt").
-    Returns:
-        np.array: Массив строк из файла.
-    """
-    # Получаем путь к папке sample_data на один уровень выше текущей директории
-    base_dir = os.path.dirname(os.getcwd())  # Переход на один уровень выше
-    file_path = os.path.join(base_dir, "sample_data", folder, content)  # Формируем путь к файлу
-    # Чтение файла
-    with open(file_path, 'r') as file:
-        file_content = file.readlines()  # Чтение строк из файла
-        file_content = [line.strip() for line in file_content]  # Удаляем символы новой строки
-    return np.array(file_content)
-
-# Функия для создания списка из Data Sets:
-def read_items_list(data_name):
-    """
-    Чтение списка элементов из файлов в папках dataset.
-    Args:
-        data_name (str): Имя файла (например, "train.txt").
-    Returns:
-        dict: Словарь, где ключи — имена папок, а значения — массивы строк из файлов.
-    """
-    data_storage = {}  # Словарь для хранения данных
-    for key in stored_data:
-        photo_item = reading_data(key, data_name)  # Чтение файла с использованием функции reading_data
-        data_storage[key] = photo_item  # Сохранение данных в словарь
-    return data_storage
-
+    
 # Основная программа
 if __name__ == "__main__":
     data_download()

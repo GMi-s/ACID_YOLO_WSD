@@ -6,7 +6,7 @@ Description:
 
 from ultralytics import YOLO
 from PIL import Image, ImageDraw
-from utils import read_annotation
+from src.sample_img_show import read_annotation
 import os
 import random
 def run_inference(image_path: str) -> dict:

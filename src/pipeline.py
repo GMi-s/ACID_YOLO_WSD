@@ -1,25 +1,28 @@
 """
 Main pipeline for the project
 """
-
-from preprocessing import data_download  # Импорт функции загрузки данных
-from sample_img_show import img_show     # Импорт функции отображения изображений
+from preprocessing import data_download, split_data  # Исправленный импорт
+from sample_img_show import img_show  # Импорт функции отображения изображений
 
 def main():
     """
     Основная функция для последовательного выполнения задач:
-    1. Загрузка данных с помощью preprocessing.py.
-    2. Отображение случайных изображений с bounding boxes с помощью sample_img_show.py.
+    1. Загрузка данных.
+    2. Разделение данных на обучающую, валидационную и тестовую выборки.
+    3. Отображение случайных изображений с bounding boxes.
     """
     # Шаг 1: Загрузка данных
     print("Загрузка данных...")
-    data_download()  # Вызов функции загрузки данных
+    data_download()
     print("Загрузка данных завершена.")
 
     # Шаг 2: Отображение случайных изображений
-    print("Отображение случайных изображений с bounding boxes...")
-    img_show()  # Вызов функции отображения изображений
+    print("Отображение случайных изображений c bounding boxes...")
+    img_show()
     print("Отображение завершено.")
+
+    # Шаг 3: Разделение данных
+    split_data()
 
 # Вызов основной функции при запуске скрипта
 if __name__ == "__main__":

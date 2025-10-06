@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: weld-spot-detection
+    container_name: weld-spot-detection
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./inference_image:/app/inference_image
+      - ./models:/app/models
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]

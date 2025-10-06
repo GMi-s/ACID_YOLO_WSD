@@ -1,51 +1,80 @@
-"""
-Application
-"""
-
+import subprocess
 from fastapi import FastAPI
-from train import train_model, validation
-from inference import run_inference, random_inference_display
-from preprocessing import data_download, process_data_folders, create_yaml_file
-from typing import Dict
+from fastapi.responses import JSONResponse, FileResponse  # Добавлен импорт FileResponse
+from pathlib import Path
+
 app = FastAPI()
 
-@app.post("/train/")
-async def train(data_links: Dict[str, str]):
-    """
-    Запуск обучения модели YOLOv8.
-    """
-    # Загрузка данных
-    data_download(data_links)
-    process_data_folders(data_links, train_percent=70, valid_percent=15)
-    create_yaml_file()
-    # Обучение модели
-    train_model()
-    return {"message": "Обучение завершено"}
+# Пути к папкам и файлам
+base_folder = Path(__file__).resolve().parent
+inference_image_folder = base_folder / "inference_image"
 
-@app.post("/inference/")
-async def inference(image_path: str):
+@app.post("/start-pipeline")
+def start_pipeline():
     """
-    Запуск инференса модели YOLOv8.
+    Запускает pipeline.py и возвращает результаты выполнения.
     """
-    result = run_inference(image_path)
-    return {"result": result}
+    try:
+        # Запуск pipeline.py
+        result = subprocess.run(["python3", "pipeline.py"], capture_output=True, text=True)
+        
+        # Проверка успешности выполнения
+        if result.returncode != 0:
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Ошибка выполнения pipeline.py", "details": result.stderr}
+            )
+        
+        # Поиск последнего сохраненного изображения
+        inference_images = list(inference_image_folder.glob("*.png"))
+        if not inference_images:
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Изображение с разметкой не найдено"}
+            )
+        
+        # Получение последнего изображения
+        latest_image = max(inference_images, key=lambda f: f.stat().st_mtime)
+        
+        # Формирование URL для изображения
+        image_url = f"/inference-image/{latest_image.name}"
+        
+        # Чтение логов обучения
+        train_log_file = base_folder / "train.log"
+        train_log = ""
+        if train_log_file.exists():
+            with open(train_log_file, "r", encoding="utf-8") as f:
+                train_log = f.read()
+        
+        # Возврат результата
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Pipeline успешно выполнен",
+                "image_url": image_url,
+                "train_log": train_log
+            }
+        )
+    
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Неизвестная ошибка", "details": str(e)}
+        )
 
-@app.post("/validation/")
-async def validate():
+@app.get("/inference-image/{image_name}")
+def get_inference_image(image_name: str):
     """
-    Запуск валидации модели YOLOv8.
+    Возвращает изображение с разметкой.
     """
-    results = validation()
-    return {"validation_results": results}
+    image_path = inference_image_folder / image_name
+    if not image_path.exists():
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Изображение не найдено"}
+        )
+    return FileResponse(image_path)  # Использование FileResponse
 
-@app.post("/random_inference/")
-async def random_inference(source_folder: str, model_type: str):
-    """
-    Запуск инференса на случайном изображении.
-    """
-    result = random_inference_display(source_folder, model_type)
-    return {"result": result}
-
-@app.get("/")
-def health_check():
-    return {"status": "healthy"}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

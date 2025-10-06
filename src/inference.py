@@ -71,11 +71,11 @@ def predict_and_display(image_file, label_file, model_type):
         source = PILImage.open(image_file)
         
         # Если INFERENCE_IMAGE_SIZE задан в config.py, изменяем размер изображения
-        if INFERENCE_IMAGE_SIZE:
-            source = source.resize(INFERENCE_IMAGE_SIZE)
+        #if INFERENCE_IMAGE_SIZE:
+        #    source = source.resize(INFERENCE_IMAGE_SIZE)
         
         # Предсказание bounding boxes
-        results = model.predict(source, batch=INFERENCE_BATCH_SIZE, device=INFERENCE_DEVICE)
+        results = model.predict(source) #, batch=INFERENCE_BATCH_SIZE, device=INFERENCE_DEVICE)
         
         # Чтение разметки для изображения
         bounding_boxes = read_annotation(label_file)

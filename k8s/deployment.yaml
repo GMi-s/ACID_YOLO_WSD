@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolov8-training
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: yolov8
+  template:
+    metadata:
+      labels:
+        app: yolov8
+    spec:
+      containers:
+        - name: yolov8-container
+          image: your-docker-repo/yolov8-fastapi:latest
+          ports:
+            - container_port: 8000
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/data
+      volumes:
+        - name: data-volume
+          emptyDir: {}

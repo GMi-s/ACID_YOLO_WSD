@@ -1,0 +1,118 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+
+write_files:
+  - path: /home/ubuntu/Dockerfile
+    content: |
+      FROM python:3.9-slim
+      WORKDIR /app
+      COPY requirements.txt .
+      RUN pip install --no-cache-dir -r requirements.txt
+      COPY . .
+      RUN mkdir -p /app/images /app/labels /app/models /app/inference_image /app/backup
+      EXPOSE 8000
+      CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  - path: /home/ubuntu/requirements.txt
+    content: |
+      fastapi>=0.68.0
+      uvicorn>=0.15.0
+      Pillow>=8.3.1
+      ultralytics>=8.0.0
+      python-dotenv>=0.19.0
+      requests>=2.26.0
+
+  - path: /home/ubuntu/app.py
+    content: |
+      import subprocess
+      from fastapi import FastAPI
+      from fastapi.responses import JSONResponse, FileResponse
+      from pathlib import Path
+
+      app = FastAPI()
+
+      base_folder = Path(__file__).resolve().parent
+      inference_image_folder = base_folder / "inference_image"
+
+      @app.post("/start-pipeline")
+      def start_pipeline():
+          try:
+              result = subprocess.run(["python3", "pipeline.py"], capture_output=True, text=True)
+              if result.returncode != 0:
+                  return JSONResponse(
+                      status_code=500,
+                      content={"error": "Ошибка выполнения pipeline.py", "details": result.stderr}
+                  )
+              inference_images = list(inference_image_folder.glob("*.png"))
+              if not inference_images:
+                  return JSONResponse(
+                      status_code=404,
+                      content={"error": "Изображение с разметкой не найдено"}
+                  )
+              latest_image = max(inference_images, key=lambda f: f.stat().st_mtime)
+              image_url = f"/inference-image/{latest_image.name}"
+              train_log_file = base_folder / "train.log"
+              train_log = ""
+              if train_log_file.exists():
+                  with open(train_log_file, "r", encoding="utf-8") as f:
+                      train_log = f.read()
+              return JSONResponse(
+                  status_code=200,
+                  content={
+                      "message": "Pipeline успешно выполнен",
+                      "image_url": image_url,
+                      "train_log": train_log
+                  }
+              )
+          except Exception as e:
+              return JSONResponse(
+                  status_code=500,
+                  content={"error": "Неизвестная ошибка", "details": str(e)}
+              )
+
+      @app.get("/inference-image/{image_name}")
+      def get_inference_image(image_name: str):
+          image_path = inference_image_folder / image_name
+          if not image_path.exists():
+              return JSONResponse(
+                  status_code=404,
+                  content={"error": "Изображение не найдено"}
+              )
+          return FileResponse(image_path)
+
+      if __name__ == "__main__":
+          import uvicorn
+          uvicorn.run(app, host="0.0.0.0", port=8000)
+
+  - path: /home/ubuntu/pipeline.py
+    content: |
+      from preprocessing import data_download, split_data
+      from sample_img_show import img_show
+      from train import train_model
+      from inference import random_inference_display
+      from config import INFERENCE_MODEL_TYPE
+
+      def main():
+          print("Загрузка данных...")
+          data_download()
+          print("Загрузка данных завершена.")
+          print("Отображение случайных изображений c bounding boxes...")
+          img_show()
+          print("Отображение завершено.")
+          split_data()
+          print("Обучение модели...")
+          train_model()
+          print("Обучение завершено.")
+          print("Запуск инференса...")
+          random_inference_display('test', INFERENCE_MODEL_TYPE)
+          print("Инференс завершён. Результаты сохранены в папке inference_image.")
+
+      if __name__ == "__main__":
+          main()
+
+runcmd:
+  - cd /home/ubuntu
+  - docker build -t weld-spot-detection .
+  - docker run -d -p 8000:8000 weld-spot-detection

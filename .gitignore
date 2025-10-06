@@ -1,11 +1,25 @@
 # Ignore files
 instance.sh
 terraform.tfstate.backup
+test.txt
+train.txt
+valid.txt
+obj.data
+obj.names
+weld_spot.yaml
 
 # Ignore folders
 .DS_Store
 .terraform
 .terraform.lock.hcl
+.inference_image
+.sample_data
+.sample_image
+.labels
+.images
+.models
+.runs
+.__pycache__
 
 terraform.tfvars
 *.tfstate
